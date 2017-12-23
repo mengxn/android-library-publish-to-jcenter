@@ -3,11 +3,7 @@ apply plugin: 'com.jfrog.bintray'
 
 // load properties
 Properties properties = new Properties()
-File localPropertiesFile = project.file("local.properties");
-if(localPropertiesFile.exists()){
-    properties.load(localPropertiesFile.newDataInputStream())
-}
-File projectPropertiesFile = project.file("project.properties");
+File projectPropertiesFile = project.file("project.properties")
 if(projectPropertiesFile.exists()){
     properties.load(projectPropertiesFile.newDataInputStream())
 }
@@ -20,13 +16,6 @@ def projectVersionName = android.defaultConfig.versionName
 def projectPackaging = properties.getProperty("project.packaging")
 def projectSiteUrl = properties.getProperty("project.siteUrl")
 def projectGitUrl = properties.getProperty("project.gitUrl")
-
-def developerId = properties.getProperty("developer.id")
-def developerName = properties.getProperty("developer.name")
-def developerEmail = properties.getProperty("developer.email")
-
-def bintrayUser = properties.getProperty("bintray.user")
-def bintrayApikey = properties.getProperty("bintray.apikey")
 
 def javadocName = properties.getProperty("javadoc.name")
 
@@ -51,9 +40,9 @@ install {
                 }
                 developers {
                     developer {
-                        id developerId
-                        name developerName
-                        email developerEmail
+                        id DEVELOPER_ID
+                        name DEVELOPER_NAME
+                        email DEVELOPER_EMAIL
                     }
                 }
                 scm {
@@ -109,8 +98,8 @@ javadoc {
 
 // bintray configuration
 bintray {
-    user = bintrayUser
-    key = bintrayApikey
+    user = BINTRAY_USER
+    key = BINTRAY_APIKEY
     configurations = ['archives']
     pkg {
         repo = "maven"
