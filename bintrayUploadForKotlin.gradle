@@ -3,8 +3,23 @@ apply plugin: 'com.jfrog.bintray'
 
 // load properties
 Properties properties = new Properties()
+File localPropertiesFile = project.file("local.properties")
+if (!localPropertiesFile.exists()) {
+    File users_file = file('/Users')
+    for (f in users_file.listFiles()) {
+        File property_file = new File(f.absolutePath, '.gradle/local.properties')
+        if (property_file.exists()) {
+            localPropertiesFile = file(property_file.absolutePath)
+            break
+        }
+    }
+}
+if (localPropertiesFile.exists()) {
+    properties.load(localPropertiesFile.newDataInputStream())
+}
+
 File projectPropertiesFile = project.file("project.properties")
-if(projectPropertiesFile.exists()){
+if (projectPropertiesFile.exists()) {
     properties.load(projectPropertiesFile.newDataInputStream())
 }
 
@@ -16,6 +31,13 @@ def projectVersionName = android.defaultConfig.versionName
 def projectPackaging = properties.getProperty("project.packaging")
 def projectSiteUrl = properties.getProperty("project.siteUrl")
 def projectGitUrl = properties.getProperty("project.gitUrl")
+
+def developerId = properties.getProperty("developer.id")
+def developerName = properties.getProperty("developer.name")
+def developerEmail = properties.getProperty("developer.email")
+
+def bintrayUser = properties.getProperty("bintray.user")
+def bintrayApikey = properties.getProperty("bintray.apikey")
 
 def javadocName = properties.getProperty("javadoc.name")
 
@@ -40,9 +62,9 @@ install {
                 }
                 developers {
                     developer {
-                        id DEVELOPER_ID
-                        name DEVELOPER_NAME
-                        email DEVELOPER_EMAIL
+                        id developerId
+                        name developerName
+                        email developerEmail
                     }
                 }
                 scm {
@@ -57,20 +79,13 @@ install {
 
 // This generates sources.jar
 task sourcesJar(type: Jar) {
-    from android.sourceSets.main.java.srcDirs
     classifier = 'sources'
+    from android.sourceSets.main.java.sourceFiles
 }
 
 task javadoc(type: Javadoc) {
-    source = android.sourceSets.main.java.srcDirs
+    source = android.sourceSets.main.java.sourceFiles
     classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
-}
-
-// Add compile dependencies to javadoc
-afterEvaluate {
-    javadoc.classpath += files(android.libraryVariants.collect { variant ->
-        variant.javaCompile.classpath.files
-    })
 }
 
 // This generates javadoc.jar
@@ -79,14 +94,19 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
     from javadoc.destinationDir
 }
 
+task classesJar(type: Jar) {
+    from "$buildDir/intermediates/classes/release"
+}
+
 artifacts {
+    archives classesJar
     archives javadocJar
     archives sourcesJar
 }
 
 // javadoc configuration
 javadoc {
-    options{
+    options {
         encoding "UTF-8"
         charSet 'UTF-8'
         author true
@@ -98,15 +118,22 @@ javadoc {
 
 // bintray configuration
 bintray {
-    user = BINTRAY_USER
-    key = BINTRAY_APIKEY
+    user = bintrayUser
+    key = bintrayApikey
     configurations = ['archives']
+    publish = true
     pkg {
         repo = "maven"
         name = projectName
+        desc = 'Kotlin library for Android'
         websiteUrl = projectSiteUrl
         vcsUrl = projectGitUrl
         licenses = ["Apache-2.0"]
-        publish = true
+        labels = ['kotlin', 'android', 'library']
+        publicDownloadNumbers = true
+        version {
+            name = projectVersionName
+            released = new Date()
+        }
     }
 }
