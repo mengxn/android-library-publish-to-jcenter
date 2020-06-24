@@ -1,5 +1,6 @@
 apply plugin: 'com.github.dcendents.android-maven'
 apply plugin: 'com.jfrog.bintray'
+apply plugin: 'org.jetbrains.dokka'
 
 // load properties
 Properties properties = new Properties()
@@ -25,6 +26,7 @@ if (projectPropertiesFile.exists()) {
 
 // read properties
 def projectName = properties.getProperty("project.name")
+def projectDesc = properties.getProperty("project.desc")
 def projectGroupId = properties.getProperty("project.groupId")
 def projectArtifactId = properties.getProperty("project.artifactId")
 def projectVersionName = android.defaultConfig.versionName
@@ -77,31 +79,31 @@ install {
     }
 }
 
-// This generates sources.jar
-task sourcesJar(type: Jar) {
-    classifier = 'sources'
-    from android.sourceSets.main.java.sourceFiles
-}
-
 task javadoc(type: Javadoc) {
-    source = android.sourceSets.main.java.sourceFiles
+    source = android.sourceSets.main.java.srcDirs
     classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
 }
 
-// This generates javadoc.jar
-task javadocJar(type: Jar, dependsOn: javadoc) {
-    classifier = 'javadoc'
+task dokkaJavadoc(type: dokka.getClass()) {
+    outputFormat = "javadoc"
+    outputDirectory = javadoc.destinationDir
+}
+
+task generateJavadoc(type: Jar, dependsOn: dokkaJavadoc) {
+    group = 'jar'
+    archiveClassifier = 'javadoc'
     from javadoc.destinationDir
 }
 
-task classesJar(type: Jar) {
-    from "$buildDir/intermediates/classes/release"
+task generateSourcesJar(type: Jar) {
+    group = 'jar'
+    from android.sourceSets.main.java.srcDirs
+    archiveClassifier = 'sources'
 }
 
 artifacts {
-    archives classesJar
-    archives javadocJar
-    archives sourcesJar
+    archives generateJavadoc
+    archives generateSourcesJar
 }
 
 // javadoc configuration
@@ -125,7 +127,7 @@ bintray {
     pkg {
         repo = "maven"
         name = projectName
-        desc = 'Kotlin library for Android'
+        desc = projectDesc
         websiteUrl = projectSiteUrl
         vcsUrl = projectGitUrl
         licenses = ["Apache-2.0"]
